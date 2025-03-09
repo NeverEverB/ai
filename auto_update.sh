@@ -1,14 +1,28 @@
 #!/bin/bash
 
-# Set working directory
-cd ~/ai/code
+# Define paths
+CODE_DIR=~/ai/code
+LOG_DIR=~/ai/logs
+SCANNER_SCRIPT="$CODE_DIR/moonshot_scanner.py"
+TEMP_SCRIPT="$CODE_DIR/moonshot_scanner_temp.py"
 
-# Fetch the latest script from GitHub
-wget -O moonshot_scanner.py "https://raw.githubusercontent.com/brian-ai-dev/moonshot-scanner/main/moonshot_scanner.py"
+# Fetch the latest moonshot_scanner.py from GitHub
+echo "Checking for updates..."
+wget -q -O "$TEMP_SCRIPT" https://raw.githubusercontent.com/NeverEverB/ai/main/moonshot_scanner.py
 
+# Compare with the existing file
+if ! cmp -s "$TEMP_SCRIPT" "$SCANNER_SCRIPT"; then
+    mv "$TEMP_SCRIPT" "$SCANNER_SCRIPT"
+    chmod +x "$SCANNER_SCRIPT"
+    echo "Moonshot Scanner updated! Restarting..."
+    
+    # Kill existing process
+    pkill -f "python3 $SCANNER_SCRIPT"
 
-# Restart the script
-pkill -f moonshot_scanner.py
-nohup python3 ~/ai/code/moonshot_scanner.py > ~/ai/logs/moonshot_output.log 2>&1 &
-
-echo "Updated and restarted moonshot scanner!"
+    # Start fresh
+    nohup python3 "$SCANNER_SCRIPT" > "$LOG_DIR/moonshot_output.log" 2>&1 &
+    echo "Scanner restarted and running!"
+else
+    echo "No changes found. Moonshot Scanner is up to date."
+    rm "$TEMP_SCRIPT"
+fi
